@@ -14,6 +14,7 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
   const [session, setSession] = useState<Session | null>(null);
   const [players, setPlayers] = useState<SessionPlayerType[]>([]);
   const [buyIns, setBuyIns] = useState<BuyIn[]>([]);
+  const [allBuyIns, setAllBuyIns] = useState<BuyIn[]>([]);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [amount, setAmount] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
@@ -30,6 +31,9 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
 
       const myBuyIns = data.buyIns.filter(b => b.userId === user.id).sort((a, b) => b.timestamp - a.timestamp);
       setBuyIns(myBuyIns);
+
+      const sortedAll = [...data.buyIns].sort((a, b) => b.timestamp - a.timestamp);
+      setAllBuyIns(sortedAll);
 
       const calculatedTotal = data.buyIns.filter(b => b.status === 'approved' || (b.status === 'pending' && b.amount < 0)).reduce((sum, b) => sum + b.amount, 0);
       setSessionTotal(calculatedTotal);
@@ -196,7 +200,7 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
         </div>
       </section>
 
-      <div className="text-center py-8 space-y-4 opacity-40">
+      <div className="text-center pt-8 space-y-4 opacity-40">
         <ShieldCheck className="w-10 h-10 mx-auto text-slate-700" />
         <div className="space-y-1">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -207,6 +211,50 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
           </p>
         </div>
       </div>
+
+      <section className="space-y-4 pt-12">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /> Global Table Audit Log
+          </h2>
+          <span className="text-[9px] font-bold text-slate-600 uppercase">Realtime Feed</span>
+        </div>
+        <div className="bg-slate-900/50 rounded-[2rem] border border-slate-800 p-2 max-h-80 overflow-y-auto custom-scrollbar shadow-inner">
+          {allBuyIns.length === 0 ? (
+            <div className="py-20 text-center text-slate-700 text-[10px] font-black uppercase tracking-widest flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full border border-slate-800 flex items-center justify-center opacity-20">♠</div>
+              Feed Ready
+            </div>
+          ) : (
+            allBuyIns.map((b, idx) => {
+              const player = players.find(p => p.userId === b.userId);
+              return (
+                <div key={b.id} className={`flex items-center justify-between p-5 rounded-2xl transition-all hover:bg-white/[0.02] group ${idx % 2 === 0 ? 'bg-slate-950/20' : ''}`}>
+                  <div className="flex items-center gap-5">
+                    <div className="font-mono text-[10px] text-slate-600 group-hover:text-slate-400 transition-colors">
+                      {new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-200">{player?.name || 'Observer'}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">
+                        {b.amount < 0 ? 'Requested Cashout' : 'Attempted Buy-In'} <span className={b.amount < 0 ? 'text-amber-400' : 'text-emerald-400'}>₹{Math.abs(b.amount)}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border shadow-sm ${b.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                      b.status === 'rejected' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                        'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                      }`}>
+                      {b.status}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
     </div>
   );
 }
