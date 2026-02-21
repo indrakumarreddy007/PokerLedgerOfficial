@@ -1,8 +1,8 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import pool from './db.js';
 import { randomUUID } from 'crypto';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export const handler = async (req: Request, res: Response) => {
     if (req.method === 'GET') {
         // List all sessions
         try {

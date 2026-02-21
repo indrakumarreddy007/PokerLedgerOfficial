@@ -1,7 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import pool from '../db.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export const handler = async (req: Request, res: Response) => {
     const { id } = req.query; // Session ID from query or body? 
     // If filename is [id].ts under api/session/status is awkward.
     // Better: api/session/[id]/status.ts or simply use the body if it's a global action handler.

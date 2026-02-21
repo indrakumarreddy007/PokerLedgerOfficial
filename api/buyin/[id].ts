@@ -1,7 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import pool from '../db.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export const handler = async (req: Request, res: Response) => {
     const { id } = req.query;
 
     if (req.method !== 'PATCH' && req.method !== 'PUT') {
