@@ -18,6 +18,13 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
   const [joinError, setJoinError] = useState('');
   const [activeTab, setActiveTab] = useState<'dash' | 'create' | 'join'>(initialCode ? 'join' : 'dash');
 
+  // Group join state
+  const [groupJoinCode, setGroupJoinCode] = useState('');
+  const [groupJoinError, setGroupJoinError] = useState('');
+  const [groupJoinLoading, setGroupJoinLoading] = useState(false);
+  const [showGroupJoin, setShowGroupJoin] = useState(false);
+
+
   const [history, setHistory] = useState<Session[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [stats, setStats] = useState<PlayerStats>({ weeklyPL: 0, monthlyPL: 0, yearlyPL: 0, totalPL: 0 });
@@ -56,12 +63,8 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Verify code exists first
-    // api.joinSession handles the join logic.
     const result = await api.joinSession(joinCode, user.id);
     if (result.success && result.sessionId) {
-      // Check if I am the creator to redirect to admin
-      // I need to fetch session details to know creator.
       const sessionData = await api.getSession(result.sessionId);
       if (sessionData && sessionData.session.createdBy === user.id) {
         navigate(`admin/${sessionData.session.sessionCode}`);
@@ -71,6 +74,25 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
     } else {
       setJoinError(result.error || 'Failed to join table.');
     }
+  };
+
+  const handleGroupJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groupJoinCode.trim()) return;
+    setGroupJoinLoading(true);
+    setGroupJoinError('');
+    const result = await api.joinGroup(user.id, groupJoinCode.trim().toUpperCase());
+    if (result.success && result.groupId) {
+      // Refresh groups list then navigate to group
+      const updatedGroups = await api.getGroups(user.id);
+      setGroups(updatedGroups || []);
+      setShowGroupJoin(false);
+      setGroupJoinCode('');
+      navigate(`group/${result.groupId}`);
+    } else {
+      setGroupJoinError(result.error || 'Invalid group code.');
+    }
+    setGroupJoinLoading(false);
   };
 
   const StatCard = ({ title, val, color }: { title: string, val: number, color: string }) => (
@@ -137,9 +159,39 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
               </div>
 
               {groups.length === 0 ? (
-                <div className="glass rounded-3xl py-12 text-center border-dashed border-sky-500/20">
-                  <p className="text-slate-500 font-bold mb-3 text-sm">No groups joined yet.</p>
-                  <button onClick={() => setActiveTab('join')} className="text-sky-400 font-black text-xs uppercase tracking-wider hover:text-white transition-colors">Join via Code</button>
+                <div className="glass rounded-3xl py-8 px-6 text-center border-dashed border-sky-500/20">
+                  <p className="text-slate-500 font-bold mb-4 text-sm">No groups joined yet.</p>
+                  {showGroupJoin ? (
+                    <form onSubmit={handleGroupJoin} className="flex flex-col gap-3">
+                      <input
+                        type="text"
+                        value={groupJoinCode}
+                        onChange={e => setGroupJoinCode(e.target.value.toUpperCase())}
+                        placeholder="Enter 6-digit group code"
+                        maxLength={6}
+                        className="w-full bg-slate-900/50 border border-sky-500/30 rounded-xl px-4 py-3 text-sky-400 font-mono font-bold text-center tracking-[0.3em] focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 uppercase placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-normal"
+                        autoFocus
+                      />
+                      {groupJoinError && <p className="text-rose-400 text-xs font-bold">{groupJoinError}</p>}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setShowGroupJoin(false); setGroupJoinError(''); setGroupJoinCode(''); }}
+                          className="flex-1 py-2 bg-white/5 text-slate-400 rounded-xl text-xs font-black uppercase tracking-wider transition-colors hover:bg-white/10"
+                        >Cancel</button>
+                        <button
+                          type="submit"
+                          disabled={groupJoinLoading || groupJoinCode.length < 6}
+                          className="flex-1 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                        >{groupJoinLoading ? 'Joining...' : 'Join Group'}</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => setShowGroupJoin(true)}
+                      className="text-sky-400 font-black text-xs uppercase tracking-wider hover:text-white transition-colors border border-sky-500/20 px-4 py-2 rounded-full bg-sky-500/10"
+                    >Join via Code</button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
