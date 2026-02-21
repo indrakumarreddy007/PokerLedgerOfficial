@@ -276,5 +276,31 @@ export const api = {
         } catch (error: any) {
             return { success: false, error: error.message };
         }
+    },
+
+    getGroupBalances: async (groupId: string): Promise<{ success: boolean; error?: string; members?: any[]; debts?: any[]; history?: any[] }> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups/${groupId}/balances`);
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.error };
+            return data;
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    settleGroupDebt: async (groupId: string, payerId: string, receiverId: string, amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups/${groupId}/settle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payerId, receiverId, amount, note })
+            });
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.error };
+            return data;
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
     }
 };

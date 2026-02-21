@@ -14,11 +14,12 @@ import { handler as sessionsHandler } from './sessions.js';
 import { handler as statsUserIdHandler } from './stats/[userId].js';
 import { handler as healthHandler } from './health.js';
 
-// Groups Handlers
 import { handler as groupsCreateHandler } from './groups/create.js';
 import { handler as groupsListHandler } from './groups/list.js';
 import { handler as groupsJoinHandler } from './groups/join.js';
 import { handler as groupsIdHandler } from './groups/[id].js';
+import { handler as groupsBalancesHandler } from './groups/balances.js';
+import { handler as groupsSettleHandler } from './groups/settle.js';
 
 const app = express();
 
@@ -34,6 +35,8 @@ app.all('/api/auth/login', loginHandler);
 app.all('/api/auth/register', registerHandler);
 
 app.all('/api/groups/join', groupsJoinHandler);
+app.all('/api/groups/:id/balances', groupsBalancesHandler);
+app.all('/api/groups/:id/settle', groupsSettleHandler);
 app.all('/api/groups/:id', groupsIdHandler);
 app.all('/api/groups', (req, res) => {
     if (req.method === 'POST') return groupsCreateHandler(req, res);
