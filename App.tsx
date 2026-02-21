@@ -24,9 +24,15 @@ export default function App() {
 
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      const [path, param] = hash.split('/');
-      setCurrentRoute(path || 'home');
-      setRouteParams(param);
+      // Check full path first before splitting, to handle multi-segment routes like group/create
+      if (hash === 'group/create') {
+        setCurrentRoute('group/create');
+        setRouteParams(null);
+      } else {
+        const [path, param] = hash.split('/');
+        setCurrentRoute(path || 'home');
+        setRouteParams(param);
+      }
     };
 
     window.addEventListener('hashchange', handleHashChange);
