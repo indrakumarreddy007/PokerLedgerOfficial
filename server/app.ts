@@ -2,23 +2,23 @@ import express from 'express';
 import cors from 'cors';
 
 // Import handlers manually instead of dynamic import for easier serverless bundling
-import { handler as loginHandler } from './auth/login.js';
-import { handler as registerHandler } from './auth/register.js';
-import { handler as buyinIdHandler } from './buyin/[id].js';
-import { handler as sessionBuyinHandler } from './session/buyin.js';
-import { handler as sessionJoinHandler } from './session/join.js';
-import { handler as sessionSettleHandler } from './session/settle.js';
-import { handler as sessionStatusHandler } from './session/status.js';
-import { handler as sessionIdHandler } from './session/[id].js';
-import { handler as sessionsHandler } from './sessions.js';
-import { handler as statsUserIdHandler } from './stats/[userId].js';
-import { handler as healthHandler } from './health.js';
+import { handler as loginHandler } from './auth/login';
+import { handler as registerHandler } from './auth/register';
+import { handler as buyinIdHandler } from './buyin/[id]';
+import { handler as sessionBuyinHandler } from './session/buyin';
+import { handler as sessionJoinHandler } from './session/join';
+import { handler as sessionSettleHandler } from './session/settle';
+import { handler as sessionStatusHandler } from './session/status';
+import { handler as sessionIdHandler } from './session/[id]';
+import { handler as sessionsHandler } from './sessions';
+import { handler as statsUserIdHandler } from './stats/[userId]';
+import { handler as healthHandler } from './health';
 
 // Groups Handlers
-import { handler as groupsCreateHandler } from './groups/create.js';
-import { handler as groupsListHandler } from './groups/list.js';
-import { handler as groupsJoinHandler } from './groups/join.js';
-import { handler as groupsIdHandler } from './groups/[id].js';
+import { handler as groupsCreateHandler } from './groups/create';
+import { handler as groupsListHandler } from './groups/list';
+import { handler as groupsJoinHandler } from './groups/join';
+import { handler as groupsIdHandler } from './groups/[id]';
 
 const app = express();
 
@@ -31,7 +31,7 @@ const mergeParamsToQuery = (req: express.Request, res: express.Response, next: e
     next();
 };
 
-import { handler as dbDebugHandler } from './db-debug.js';
+import { handler as dbDebugHandler } from './db-debug';
 
 app.all('/api/health', healthHandler);
 app.all('/api/db-debug', dbDebugHandler);
