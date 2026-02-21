@@ -17,6 +17,7 @@ CREATE TABLE sessions (
     session_code TEXT UNIQUE NOT NULL,
     blind_value TEXT DEFAULT '5/10',
     created_by UUID REFERENCES users(id),
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
     status TEXT CHECK (status IN ('active', 'closed')) DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     closed_at TIMESTAMP WITH TIME ZONE
@@ -42,7 +43,27 @@ CREATE TABLE buy_ins (
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 5. Groups table
+CREATE TABLE groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    join_code TEXT UNIQUE NOT NULL,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 6. Group Members
+CREATE TABLE group_members (
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT CHECK (role IN ('owner', 'admin', 'member')) DEFAULT 'member',
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (group_id, user_id)
+);
+
 -- Indexing for performance
 CREATE INDEX idx_sessions_code ON sessions(session_code);
+CREATE INDEX idx_sessions_group ON sessions(group_id);
 CREATE INDEX idx_buy_ins_session ON buy_ins(session_id);
 CREATE INDEX idx_session_players_session ON session_players(session_id);
+CREATE INDEX idx_group_members_group ON group_members(group_id);
