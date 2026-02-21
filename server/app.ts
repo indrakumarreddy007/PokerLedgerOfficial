@@ -14,6 +14,12 @@ import { handler as sessionsHandler } from './sessions.js';
 import { handler as statsUserIdHandler } from './stats/[userId].js';
 import { handler as healthHandler } from './health.js';
 
+// Groups Handlers
+import { handler as groupsCreateHandler } from './groups/create.js';
+import { handler as groupsListHandler } from './groups/list.js';
+import { handler as groupsJoinHandler } from './groups/join.js';
+import { handler as groupsIdHandler } from './groups/[id].js';
+
 const app = express();
 
 app.use(cors());
@@ -32,6 +38,14 @@ app.all('/api/db-debug', dbDebugHandler);
 app.all('/api/sessions', sessionsHandler);
 app.all('/api/auth/login', loginHandler);
 app.all('/api/auth/register', registerHandler);
+
+app.all('/api/groups/join', groupsJoinHandler);
+app.all('/api/groups/:id', mergeParamsToQuery, groupsIdHandler);
+app.all('/api/groups', (req, res) => {
+    if (req.method === 'POST') return groupsCreateHandler(req, res);
+    if (req.method === 'GET') return groupsListHandler(req, res);
+    return res.status(405).json({ error: 'Method not allowed' });
+});
 
 app.all('/api/buyin/:id', mergeParamsToQuery, buyinIdHandler);
 

@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { User, PlayerStats, Session } from '../types';
+import React, { useState, useEffect } from 'react';
+import { User, PlayerStats, Session, Group } from '../types';
 import { api } from '../services/api';
-import { PlusCircle, Key, History, TrendingUp, LayoutDashboard, ChevronRight, Activity, Zap } from 'lucide-react';
+import { PlusCircle, Key, History, LayoutDashboard, Activity, Users, ChevronRight, Zap } from 'lucide-react';
 
 interface HomeProps {
   user: User;
@@ -19,30 +19,20 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
   const [activeTab, setActiveTab] = useState<'dash' | 'create' | 'join'>(initialCode ? 'join' : 'dash');
 
   const [history, setHistory] = useState<Session[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [stats, setStats] = useState<PlayerStats>({ weeklyPL: 0, monthlyPL: 0, yearlyPL: 0, totalPL: 0 });
 
   useEffect(() => {
-    // Fetch stats and history
     const fetchData = async () => {
-      const allSessions = await api.getSessions();
-      // Filter sessions where user is a player
-      // This logic ideally moves to backend, but filtering locally for now.
-      // We need to fetch players for each session to know if user is in it?
-      // Or we can rely on a new endpoint /api/user/sessions.
-      // For MVP, I will just list all sessions for now or check if I can get "my sessions".
-      // api.getSessions() returns all.
-      // To filter, we'd need to loop and fetch details, which is N+1.
-      // Let's just show all sessions for now or assume we can filter if the API supported it.
-      // Given the constraints, I will fetch all and let the user see all (Lobby style).
-      // The original code filtered: return all.filter(s => mockStore.getSessionPlayers(s.id).some(p => p.userId === user.id));
+      const p1 = api.getSessions();
+      const p2 = api.getUserStats(user.id);
+      const p3 = api.getGroups(user.id);
 
-      // To reproduce exact behavior without N+1, I would need a backend change.
-      // But I can lazy load or just show all.
-      // Let's show all for the "Lobby".
+      const [allSessions, s, userGroups] = await Promise.all([p1, p2, p3]);
+
       setHistory(allSessions);
-
-      const s = await api.getUserStats(user.id);
       setStats(s);
+      setGroups(userGroups);
     };
     fetchData();
   }, [user.id]);
@@ -133,50 +123,92 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
 
       <div className="min-h-[300px]">
         {activeTab === 'dash' && (
-          <div className="space-y-4 animate-slide">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <History className="w-3 h-3" /> Table History
-              </h2>
-            </div>
-            {history.length === 0 ? (
-              <div className="glass rounded-3xl py-16 text-center">
-                <p className="text-slate-500 font-bold mb-4">No active seats found.</p>
-                <button onClick={() => setActiveTab('create')} className="px-6 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-black border border-emerald-500/20 hover:bg-emerald-500 hover:text-slate-950 transition-all">Start a Game</button>
+          <div className="space-y-8 animate-slide">
+
+            {/* Groups Section */}
+            <div>
+              <div className="flex items-center justify-between px-1 mb-4">
+                <h2 className="text-[10px] font-black text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                  <Users className="w-3 h-3" /> My Groups
+                </h2>
+                <button onClick={() => navigate('group/create')} className="text-[10px] font-black tracking-widest uppercase text-sky-400 hover:text-white transition-colors flex items-center gap-1 bg-sky-500/10 px-3 py-1.5 rounded-full border border-sky-500/20">
+                  <PlusCircle className="w-3 h-3" /> New
+                </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {history.map(s => (
-                  <div
-                    key={s.id}
-                    onClick={() => {
-                      if (s.status === 'closed') navigate(`settlement/${s.id}`);
-                      else if (s.createdBy === user.id) navigate(`admin/${s.sessionCode}`);
-                      else navigate(`player/${s.sessionCode}`);
-                    }}
-                    className="glass group p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.03] active:scale-[0.98] border border-white/[0.02] hover:border-emerald-500/30"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-black ${s.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-slate-800 text-slate-500'}`}>
-                        {s.name.charAt(0)}
+
+              {groups.length === 0 ? (
+                <div className="glass rounded-3xl py-12 text-center border-dashed border-sky-500/20">
+                  <p className="text-slate-500 font-bold mb-3 text-sm">No groups joined yet.</p>
+                  <button onClick={() => setActiveTab('join')} className="text-sky-400 font-black text-xs uppercase tracking-wider hover:text-white transition-colors">Join via Code</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {groups.map(g => (
+                    <div
+                      key={g.id}
+                      onClick={() => navigate(`group/${g.id}`)}
+                      className="glass group p-4 rounded-2xl cursor-pointer hover:bg-sky-500/5 transition-all border border-transparent hover:border-sky-500/20 flex items-center gap-3"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-black shadow-inner">
+                        {g.name.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">{s.name}</h3>
-                        <p className="text-[10px] text-slate-500 font-mono flex items-center gap-2">
-                          {s.sessionCode} <span className="opacity-30">•</span> {new Date(s.createdAt).toLocaleDateString()}
-                        </p>
+                        <h3 className="font-bold text-slate-200 group-hover:text-sky-400 transition-colors text-sm">{g.name}</h3>
+                        <p className="text-[10px] text-slate-500 font-mono">Members: {g.joinCode}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter ${s.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
-                        {s.status}
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-emerald-400" />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Existing Quick Play Sessions */}
+            <div>
+              <div className="flex items-center justify-between px-1 mb-4">
+                <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <History className="w-3 h-3" /> Quick Play History
+                </h2>
               </div>
-            )}
+
+              {history.length === 0 ? (
+                <div className="glass rounded-3xl py-16 text-center">
+                  <p className="text-slate-500 font-bold mb-4">No active seats found.</p>
+                  <button onClick={() => setActiveTab('create')} className="px-6 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-black border border-emerald-500/20 hover:bg-emerald-500 hover:text-slate-950 transition-all">Start a Game</button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {history.map(s => (
+                    <div
+                      key={s.id}
+                      onClick={() => {
+                        if (s.status === 'closed') navigate(`settlement/${s.id}`);
+                        else if (s.createdBy === user.id) navigate(`admin/${s.sessionCode}`);
+                        else navigate(`player/${s.sessionCode}`);
+                      }}
+                      className="glass group p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.03] active:scale-[0.98] border border-white/[0.02] hover:border-emerald-500/30"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-black ${s.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-slate-800 text-slate-500'}`}>
+                          {s.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">{s.name}</h3>
+                          <p className="text-[10px] text-slate-500 font-mono flex items-center gap-2">
+                            {s.sessionCode} <span className="opacity-30">•</span> {new Date(s.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter ${s.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
+                          {s.status}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-emerald-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

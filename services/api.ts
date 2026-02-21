@@ -15,10 +15,19 @@ const mapSession = (s: any): Session => ({
     name: s.name,
     sessionCode: s.session_code,
     createdBy: s.created_by,
+    groupId: s.group_id,
     status: s.status as SessionStatus,
     createdAt: new Date(s.created_at).getTime(),
     closedAt: s.closed_at ? new Date(s.closed_at).getTime() : undefined,
     blindValue: s.blind_value
+});
+
+const mapGroup = (g: any): any => ({ // any for now, import Group type Later
+    id: g.id,
+    name: g.name,
+    joinCode: g.join_code,
+    createdBy: g.created_by,
+    createdAt: new Date(g.created_at).getTime()
 });
 
 const mapPlayer = (p: any): SessionPlayer => ({
@@ -96,12 +105,15 @@ export const api = {
         return data.map(mapSession);
     },
 
-    createSession: async (name: string, blindValue: string, createdBy: string): Promise<{ success: boolean; session?: Session; error?: string }> => {
+    createSession: async (name: string, blindValue: string, createdBy: string, groupId?: string): Promise<{ success: boolean; error?: string; session?: Session }> => {
         try {
+            const body: any = { name, blindValue, createdBy };
+            if (groupId) body.groupId = groupId;
+
             const res = await fetch(`${API_BASE}/sessions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, blindValue, createdBy })
+                body: JSON.stringify(body)
             });
             const contentType = res.headers.get("content-type");
             if (contentType && contentType.indexOf("application/json") !== -1) {
@@ -205,5 +217,64 @@ export const api = {
         const res = await fetch(`${API_BASE}/stats/${userId}`);
         if (!res.ok) return { weeklyPL: 0, monthlyPL: 0, yearlyPL: 0, totalPL: 0 };
         return await res.json();
+    },
+
+    // Groups
+    createGroup: async (name: string, createdBy: string): Promise<{ success: boolean; error?: string; group?: any }> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, createdBy })
+            });
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.error };
+            return { success: true, group: mapGroup(data.group) };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    getGroups: async (userId: string): Promise<any[]> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups?userId=${userId}`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.groups;
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    },
+
+    getGroupDetails: async (groupId: string): Promise<{ success: boolean; group?: any; activeSessions?: Session[]; leaderboard?: any[]; error?: string }> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups/${groupId}`);
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.error };
+            return {
+                success: true,
+                group: mapGroup(data.group),
+                activeSessions: (data.activeSessions || []).map(mapSession),
+                leaderboard: data.leaderboard || []
+            };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    joinGroup: async (userId: string, joinCode: string): Promise<{ success: boolean; error?: string; groupId?: string }> => {
+        try {
+            const res = await fetch(`${API_BASE}/groups/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, joinCode })
+            });
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.error };
+            return data;
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
     }
 };

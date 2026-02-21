@@ -84,6 +84,14 @@ export default function Settlement({ user, sessionId, navigate }: SettlementProp
     </div>
   );
 
+  const handleBack = () => {
+    if (data.session.groupId) {
+      navigate(`group/${data.session.groupId}`);
+    } else {
+      navigate('home');
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in zoom-in-95 duration-500">
       <div className="text-center space-y-2">
@@ -151,10 +159,10 @@ export default function Settlement({ user, sessionId, navigate }: SettlementProp
 
       <div className="flex justify-center pt-4">
         <button
-          onClick={() => navigate('home')}
+          onClick={handleBack}
           className="px-8 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl active:scale-95 text-white"
         >
-          Back to Lobby
+          {data.session.groupId ? 'Back to Group Dashboard' : 'Back to Lobby'}
         </button>
       </div>
     </div>

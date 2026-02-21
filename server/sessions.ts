@@ -14,7 +14,7 @@ export const handler = async (req: Request, res: Response) => {
         }
     } else if (req.method === 'POST') {
         // Create a new session
-        const { name, blindValue, createdBy } = req.body;
+        const { name, blindValue, createdBy, groupId } = req.body;
 
         if (!name || !blindValue || !createdBy) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -29,12 +29,22 @@ export const handler = async (req: Request, res: Response) => {
                 await client.query('BEGIN');
 
                 // Create session
-                const sessionResult = await client.query(
-                    `INSERT INTO sessions (name, session_code, blind_value, created_by, status) 
-           VALUES ($1, $2, $3, $4, 'active') 
-           RETURNING *`,
-                    [name, sessionCode, blindValue, createdBy]
-                );
+                let sessionResult;
+                if (groupId) {
+                    sessionResult = await client.query(
+                        `INSERT INTO sessions (name, session_code, blind_value, created_by, status, group_id) 
+                         VALUES ($1, $2, $3, $4, 'active', $5) 
+                         RETURNING *`,
+                        [name, sessionCode, blindValue, createdBy, groupId]
+                    );
+                } else {
+                    sessionResult = await client.query(
+                        `INSERT INTO sessions (name, session_code, blind_value, created_by, status) 
+                         VALUES ($1, $2, $3, $4, 'active') 
+                         RETURNING *`,
+                        [name, sessionCode, blindValue, createdBy]
+                    );
+                }
                 const session = sessionResult.rows[0];
 
                 // Add creator as admin

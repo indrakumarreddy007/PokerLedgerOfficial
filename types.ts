@@ -16,10 +16,28 @@ export interface Session {
   name: string;
   sessionCode: string;
   createdBy: string; // userId
+  groupId?: string; // Optional link to a tenant Group
   status: SessionStatus;
   createdAt: number;
   closedAt?: number;
   blindValue?: string;
+}
+
+export type GroupRole = 'owner' | 'admin' | 'member';
+
+export interface Group {
+  id: string;
+  name: string;
+  joinCode: string;
+  createdBy: string;
+  createdAt: number;
+}
+
+export interface GroupMember {
+  groupId: string;
+  userId: string;
+  role: GroupRole;
+  joinedAt: number;
 }
 
 export interface SessionPlayer {

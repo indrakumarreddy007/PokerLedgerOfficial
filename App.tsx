@@ -6,6 +6,8 @@ import Home from './views/Home';
 import SessionAdmin from './views/SessionAdmin';
 import SessionPlayer from './views/SessionPlayer';
 import Settlement from './views/Settlement';
+import GroupCreate from './views/GroupCreate';
+import GroupDashboard from './views/GroupDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
@@ -62,6 +64,10 @@ export default function App() {
         return <SessionPlayer user={user} sessionCode={routeParams} navigate={navigate} />;
       case 'settlement':
         return <Settlement user={user} sessionId={routeParams} navigate={navigate} />;
+      case 'group/create':
+        return <GroupCreate user={user} navigate={navigate} />;
+      case 'group':
+        return <GroupDashboard user={user} groupId={routeParams} navigate={navigate} />;
       case 'join':
         return <Home user={user} onLogout={handleLogout} navigate={navigate} initialCode={routeParams} />;
       default:
