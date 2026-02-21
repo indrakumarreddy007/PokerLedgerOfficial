@@ -32,8 +32,11 @@ export const handler = async (req: Request, res: Response) => {
                 );
             }
 
-            // If it's a cashout request (negative amount), ensure they have at least one approved buy-in
+            // If it's a cashout request (negative amount), ensure two things:
+            // 1. They have at least one approved buy-in
+            // 2. The cashout amount does not exceed the total session pool (prevent negative session total)
             if (amount < 0) {
+                // Check 1: Must have at least one approved buy-in
                 const buyinCheck = await client.query(
                     "SELECT COUNT(*) as count FROM buy_ins WHERE session_id = $1 AND user_id = $2 AND status = 'approved' AND amount > 0",
                     [sessionId, userId]
@@ -41,6 +44,18 @@ export const handler = async (req: Request, res: Response) => {
                 if (parseInt(buyinCheck.rows[0].count) === 0) {
                     await client.query('ROLLBACK');
                     return res.status(400).json({ error: 'You must have at least one approved buy-in to request a cashout.' });
+                }
+
+                // Check 2: Cannot cashout more than the entire session pool
+                // Sum all approved amounts across the whole session, and subtract pending cashouts
+                const sessionPoolCheck = await client.query(
+                    "SELECT COALESCE(SUM(amount), 0) as total FROM buy_ins WHERE session_id = $1 AND (status = 'approved' OR (status = 'pending' AND amount < 0))",
+                    [sessionId]
+                );
+                const sessionTotal = parseFloat(sessionPoolCheck.rows[0].total);
+                if (Math.abs(amount) > sessionTotal) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ error: `Cannot cash out more than the total session pool (₹${sessionTotal}).` });
                 }
             }
 

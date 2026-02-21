@@ -40,11 +40,17 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
 
   const totalApproved = buyIns.filter(b => b.status === 'approved').reduce((sum, b) => sum + b.amount, 0);
   const hasApprovedBuyIn = buyIns.some(b => b.status === 'approved' && b.amount > 0);
+  const sessionTotal = buyIns.filter(b => b.status === 'approved' || (b.status === 'pending' && b.amount < 0)).reduce((sum, b) => sum + b.amount, 0);
 
   const handleRequest = async (e: React.FormEvent, customAmount?: number) => {
     e.preventDefault();
     if (!session || !amount || parseFloat(amount) <= 0) return;
     const finalAmount = customAmount !== undefined ? customAmount : parseFloat(amount);
+
+    if (finalAmount < 0 && Math.abs(finalAmount) > sessionTotal) {
+      alert(`You cannot cashout more than the total session pool (₹${sessionTotal}).`);
+      return;
+    }
 
     await api.requestBuyIn(session.id, user.id, finalAmount);
     setAmount('');
