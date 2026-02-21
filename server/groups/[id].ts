@@ -6,7 +6,7 @@ export const handler = async (req: Request, res: Response) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { id } = req.query;
+    const { id } = req.params;
     if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'Missing group ID' });
     }
