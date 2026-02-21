@@ -13,7 +13,8 @@ export const handler = async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(
-            `SELECT g.*, gm.role, gm.joined_at 
+            `SELECT g.*, gm.role, gm.joined_at,
+                (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count
              FROM groups g
              JOIN group_members gm ON g.id = gm.group_id
              WHERE gm.user_id = $1

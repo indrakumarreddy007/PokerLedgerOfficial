@@ -206,7 +206,7 @@ export default function Home({ user, navigate, initialCode }: HomeProps) {
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-200 group-hover:text-sky-400 transition-colors text-sm">{g.name}</h3>
-                        <p className="text-[10px] text-slate-500 font-mono">Members: {g.joinCode}</p>
+                        <p className="text-[10px] text-slate-500 font-mono">{g.memberCount ?? g.member_count ?? '—'} Members</p>
                       </div>
                     </div>
                   ))}
