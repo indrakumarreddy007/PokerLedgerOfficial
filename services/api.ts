@@ -121,7 +121,11 @@ export const api = {
 
     getSession: async (idOrCode: string): Promise<{ session: Session, players: SessionPlayer[], buyIns: BuyIn[] } | null> => {
         const res = await fetch(`${API_BASE}/session/${idOrCode}`);
-        if (!res.ok) return null;
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('getSession failed:', res.status, errText);
+            throw new Error(`Server returned ${res.status}: ${errText.substring(0, 100)}`);
+        }
         const data = await res.json();
         return {
             session: mapSession(data.session),
