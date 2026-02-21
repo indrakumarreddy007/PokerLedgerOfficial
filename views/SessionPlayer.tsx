@@ -14,6 +14,7 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
   const [session, setSession] = useState<Session | null>(null);
   const [players, setPlayers] = useState<SessionPlayerType[]>([]);
   const [buyIns, setBuyIns] = useState<BuyIn[]>([]);
+  const [sessionTotal, setSessionTotal] = useState(0);
   const [amount, setAmount] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -29,6 +30,9 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
 
       const myBuyIns = data.buyIns.filter(b => b.userId === user.id).sort((a, b) => b.timestamp - a.timestamp);
       setBuyIns(myBuyIns);
+
+      const calculatedTotal = data.buyIns.filter(b => b.status === 'approved' || (b.status === 'pending' && b.amount < 0)).reduce((sum, b) => sum + b.amount, 0);
+      setSessionTotal(calculatedTotal);
     }
   };
 
@@ -40,7 +44,6 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
 
   const totalApproved = buyIns.filter(b => b.status === 'approved').reduce((sum, b) => sum + b.amount, 0);
   const hasApprovedBuyIn = buyIns.some(b => b.status === 'approved' && b.amount > 0);
-  const sessionTotal = buyIns.filter(b => b.status === 'approved' || (b.status === 'pending' && b.amount < 0)).reduce((sum, b) => sum + b.amount, 0);
 
   const handleRequest = async (e: React.FormEvent, customAmount?: number) => {
     e.preventDefault();
