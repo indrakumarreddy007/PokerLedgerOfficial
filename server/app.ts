@@ -20,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 
 // Helper middleware to merge params into query so that existing code expects req.query.[id]
-const mergeParamsToQuery = (req, res, next) => {
+const mergeParamsToQuery = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     req.query = { ...req.query, ...req.params };
     next();
 };

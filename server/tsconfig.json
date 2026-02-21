@@ -6,13 +6,13 @@
         "lib": [
             "ES2020"
         ],
-        "outDir": "dist/api",
+        "outDir": "dist/server",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "api/**/*"
+        "**/*"
     ]
 }
