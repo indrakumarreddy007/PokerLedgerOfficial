@@ -39,18 +39,12 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
   }, [sessionCode]);
 
   const totalApproved = buyIns.filter(b => b.status === 'approved').reduce((sum, b) => sum + b.amount, 0);
-  const pendingCashouts = buyIns.filter(b => b.status === 'pending' && b.amount < 0).reduce((sum, b) => sum + b.amount, 0);
-  const availableToCashout = totalApproved + pendingCashouts; // pendingCashouts is already negative
+  const hasApprovedBuyIn = buyIns.some(b => b.status === 'approved' && b.amount > 0);
 
   const handleRequest = async (e: React.FormEvent, customAmount?: number) => {
     e.preventDefault();
     if (!session || !amount || parseFloat(amount) <= 0) return;
     const finalAmount = customAmount !== undefined ? customAmount : parseFloat(amount);
-
-    if (finalAmount < 0 && Math.abs(finalAmount) > availableToCashout) {
-      alert(`You cannot cashout more than your available stack (₹${availableToCashout}).`);
-      return;
-    }
 
     await api.requestBuyIn(session.id, user.id, finalAmount);
     setAmount('');
@@ -122,7 +116,7 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
                 <input
                   type="number"
                   autoFocus
-                  className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-4 py-5 focus:ring-2 focus:ring-emerald-500 outline-none text-3xl font-black text-white"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-4 py-5 focus:ring-2 focus-ring-emerald-500 outline-none text-3xl font-black text-white"
                   placeholder="500"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
@@ -135,9 +129,9 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
               </button>
               <button
                 type="button"
-                disabled={availableToCashout <= 0}
+                disabled={!hasApprovedBuyIn}
                 onClick={(e) => { e.preventDefault(); if (amount) handleRequest(new Event('submit') as any, -Math.abs(parseFloat(amount))); }}
-                className={`flex-1 py-4 bg-amber-500/20 text-amber-500 rounded-xl text-xs font-black uppercase border border-amber-500/30 transition-all ${availableToCashout <= 0 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                className={`flex-1 py-4 bg-amber-500/20 text-amber-500 rounded-xl text-xs font-black uppercase border border-amber-500/30 transition-all ${!hasApprovedBuyIn ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
               >
                 Cashout
               </button>

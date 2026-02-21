@@ -32,17 +32,15 @@ export const handler = async (req: Request, res: Response) => {
                 );
             }
 
-            // If it's a cashout request (negative amount), ensure they have enough approved chips
-            // We must also subtract any pending cashouts to prevent double-spending
+            // If it's a cashout request (negative amount), ensure they have at least one approved buy-in
             if (amount < 0) {
-                const chipsRes = await client.query(
-                    "SELECT COALESCE(SUM(amount), 0) as total FROM buy_ins WHERE session_id = $1 AND user_id = $2 AND (status = 'approved' OR (status = 'pending' AND amount < 0))",
+                const buyinCheck = await client.query(
+                    "SELECT COUNT(*) as count FROM buy_ins WHERE session_id = $1 AND user_id = $2 AND status = 'approved' AND amount > 0",
                     [sessionId, userId]
                 );
-                const totalAvailable = parseFloat(chipsRes.rows[0].total);
-                if (Math.abs(amount) > totalAvailable) {
+                if (parseInt(buyinCheck.rows[0].count) === 0) {
                     await client.query('ROLLBACK');
-                    return res.status(400).json({ error: `Cannot cashout more than your available stack (₹${totalAvailable}).` });
+                    return res.status(400).json({ error: 'You must have at least one approved buy-in to request a cashout.' });
                 }
             }
 
