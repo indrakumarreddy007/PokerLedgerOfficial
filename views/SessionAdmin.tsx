@@ -68,10 +68,11 @@ export default function SessionAdmin({ user, sessionCode, navigate }: SessionAdm
     refreshData();
   };
 
-  const handleAdminBuyIn = async (e: React.FormEvent) => {
+  const handleAdminBuyIn = async (e: React.FormEvent, customAmount?: number) => {
     e.preventDefault();
     if (!session || !ownAmount) return;
-    await api.requestBuyIn(session.id, user.id, parseFloat(ownAmount), 'approved');
+    const finalAmount = customAmount !== undefined ? customAmount : parseFloat(ownAmount);
+    await api.requestBuyIn(session.id, user.id, finalAmount, 'approved');
     setOwnAmount('');
     setIsAddingOwn(false);
     refreshData();
@@ -172,8 +173,8 @@ export default function SessionAdmin({ user, sessionCode, navigate }: SessionAdm
       </div>
 
       {isAddingOwn && (
-        <form onSubmit={handleAdminBuyIn} className="bg-emerald-500/5 border-2 border-emerald-500/20 p-6 rounded-[2rem] animate-in zoom-in-95 flex items-center gap-4">
-          <div className="flex-1 relative">
+        <div className="bg-emerald-500/5 border-2 border-emerald-500/20 p-6 rounded-[2rem] animate-in zoom-in-95 flex flex-col md:flex-row items-center gap-4">
+          <div className="flex-1 w-full relative">
             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
             <input
               type="number"
@@ -184,9 +185,20 @@ export default function SessionAdmin({ user, sessionCode, navigate }: SessionAdm
               onChange={(e) => setOwnAmount(e.target.value)}
             />
           </div>
-          <button type="submit" className="bg-emerald-500 text-slate-950 px-8 py-4 rounded-xl font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">Add Stack</button>
-          <button type="button" onClick={() => setIsAddingOwn(false)} className="p-4 text-slate-500 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
-        </form>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); if (ownAmount) handleAdminBuyIn(new Event('submit') as any, Math.abs(parseFloat(ownAmount))); }}
+              className="flex-1 bg-emerald-500 text-slate-950 px-6 py-4 rounded-xl font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+            >Buy-In</button>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); if (ownAmount) handleAdminBuyIn(new Event('submit') as any, -Math.abs(parseFloat(ownAmount))); }}
+              className="flex-1 bg-amber-500/20 text-amber-500 px-6 py-4 rounded-xl font-black shadow-lg border border-amber-500/30 active:scale-95 transition-all"
+            >Cashout</button>
+            <button type="button" onClick={() => setIsAddingOwn(false)} className="px-4 py-4 text-slate-500 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+          </div>
+        </div>
       )}
 
       {isEnding ? (
@@ -250,8 +262,17 @@ export default function SessionAdmin({ user, sessionCode, navigate }: SessionAdm
                   pendingBuyIns.map(b => (
                     <div key={b.id} className="group flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl hover:border-emerald-500/30 transition-all shadow-xl animate-in slide-in-from-left-4">
                       <div>
-                        <p className="font-black text-slate-200 text-lg">{players.find(p => p.userId === b.userId)?.name}</p>
-                        <p className="text-emerald-400 text-3xl font-black tracking-tighter mt-1">₹{b.amount}</p>
+                        <p className="font-black text-slate-200 text-lg flex items-center gap-2">
+                          {players.find(p => p.userId === b.userId)?.name}
+                          {b.amount < 0 ? (
+                            <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-md uppercase tracking-tighter font-black border border-amber-500/20">Cashout</span>
+                          ) : (
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-tighter font-black border border-emerald-500/20">Buy-In</span>
+                          )}
+                        </p>
+                        <p className={`text-3xl font-black tracking-tighter mt-1 ${b.amount < 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          ₹{Math.abs(b.amount)}
+                        </p>
                         <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">{new Date(b.timestamp).toLocaleTimeString()}</p>
                       </div>
                       <div className="flex gap-3">

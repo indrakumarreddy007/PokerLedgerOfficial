@@ -38,10 +38,11 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
     return () => clearInterval(interval);
   }, [sessionCode]);
 
-  const handleRequest = async (e: React.FormEvent) => {
+  const handleRequest = async (e: React.FormEvent, customAmount?: number) => {
     e.preventDefault();
     if (!session || !amount || parseFloat(amount) <= 0) return;
-    await api.requestBuyIn(session.id, user.id, parseFloat(amount));
+    const finalAmount = customAmount !== undefined ? customAmount : parseFloat(amount);
+    await api.requestBuyIn(session.id, user.id, finalAmount);
     setAmount('');
     setIsRequesting(false);
     refreshData();
@@ -88,14 +89,14 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
             <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
               <Plus className="w-5 h-5 text-emerald-500" />
             </div>
-            Top Up
+            Manage Stack
           </h2>
           {!isRequesting && (
             <button
               onClick={() => setIsRequesting(true)}
               className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-2xl transition-all shadow-xl shadow-emerald-500/30 active:scale-95 flex items-center gap-2"
             >
-              Add Chips
+              Request Chips
             </button>
           )}
         </div>
@@ -119,11 +120,14 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
                 />
               </div>
             </div>
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setIsRequesting(false)} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-slate-400 uppercase">Cancel</button>
-              <button type="submit" className="flex-1 py-4 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-                {isAdmin ? 'Confirm Buy-In' : 'Request Chips'}
+            <div className="flex flex-col md:flex-row gap-3">
+              <button type="button" onClick={(e) => { e.preventDefault(); if (amount) handleRequest(new Event('submit') as any, Math.abs(parseFloat(amount))); }} className="flex-1 py-4 bg-emerald-500 text-slate-950 rounded-xl text-xs font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+                Buy-In
               </button>
+              <button type="button" onClick={(e) => { e.preventDefault(); if (amount) handleRequest(new Event('submit') as any, -Math.abs(parseFloat(amount))); }} className="flex-1 py-4 bg-amber-500/20 text-amber-500 rounded-xl text-xs font-black uppercase border border-amber-500/30 active:scale-95 transition-all">
+                Cashout
+              </button>
+              <button type="button" onClick={() => setIsRequesting(false)} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-slate-400 uppercase">Cancel</button>
             </div>
           </form>
         )}
@@ -144,10 +148,12 @@ export default function SessionPlayer({ user, sessionCode, navigate }: SessionPl
                 <div key={b.id} className="group flex items-center justify-between bg-slate-950 p-6 rounded-3xl border border-slate-800 hover:border-slate-700 transition-all shadow-lg">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors">₹{b.amount}</p>
+                      <p className={`text-2xl font-black transition-colors ${b.amount < 0 ? 'text-amber-400 group-hover:text-amber-300' : 'text-emerald-400 group-hover:text-emerald-300'}`}>₹{Math.abs(b.amount)}</p>
                       {b.status === 'approved' && <CheckCircle className="w-4 h-4 text-emerald-500/50" />}
                     </div>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                      {b.amount < 0 ? 'Cashout' : 'Buy-In'} • {new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                   <div>
                     {b.status === 'pending' && (
