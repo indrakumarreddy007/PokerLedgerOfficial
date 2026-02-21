@@ -7,7 +7,7 @@ export const handler = async (req: Request, res: Response) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { userId } = req.query;
+    const userId = req.query.userId || req.params.userId;
 
     if (!userId) {
         return res.status(400).json({ error: 'Missing userId parameter' });

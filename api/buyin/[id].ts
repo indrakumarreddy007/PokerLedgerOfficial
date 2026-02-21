@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import pool from '../db.js';
 
 export const handler = async (req: Request, res: Response) => {
-    const { id } = req.query;
+    const id = req.query.id || req.params.id;
 
     if (req.method !== 'PATCH' && req.method !== 'PUT') {
         return res.status(405).json({ error: 'Method not allowed' });

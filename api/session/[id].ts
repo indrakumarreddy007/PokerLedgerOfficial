@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import pool from '../db.js';
 
 export const handler = async (req: Request, res: Response) => {
-    const { id } = req.query; // This captures [id] from the filename
+    const id = req.query.id || req.params.id; // This captures [id] from the filename or Express route
 
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
