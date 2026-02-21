@@ -25,7 +25,10 @@ const mergeParamsToQuery = (req, res, next) => {
     next();
 };
 
+import { handler as dbDebugHandler } from './db-debug.js';
+
 app.all('/api/health', healthHandler);
+app.all('/api/db-debug', dbDebugHandler);
 app.all('/api/sessions', sessionsHandler);
 app.all('/api/auth/login', loginHandler);
 app.all('/api/auth/register', registerHandler);
